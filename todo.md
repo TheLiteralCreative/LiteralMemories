@@ -17,3 +17,6 @@
 - [x] Add BCC to Joel@literalcreative.com on owner notification email
 - [x] Add T-Mobile SMS gateway (6153640630@tmomail.net) as BCC for instant SMS alerts
 - [x] Add plain-text email body for clean SMS display on phone screen
+- [x] Add prominent "Save & Email My Quote" button in sticky summary sidebar
+- [x] Button is always visible — green CTA when items are selected, muted prompt when empty
+- [x] Button wired to SaveQuoteModal via externalOpen prop (works on mobile too)

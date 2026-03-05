@@ -316,6 +316,7 @@ function CategorySection({
 export default function Home() {
   const [form, setForm] = useState<FormState>(initialState);
   const [priceKey, setPriceKey] = useState(0);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   const summaryRef = useRef<HTMLDivElement>(null);
 
   const updateService = useCallback((id: string, field: keyof ServiceEntry, value: number) => {
@@ -867,6 +868,20 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Save My Quote Button — primary CTA */}
+              <button
+                type="button"
+                onClick={() => setSaveModalOpen(true)}
+                className="w-full py-3 text-sm font-bold rounded-lg transition-all shadow-sm"
+                style={{
+                  background: hasItems ? 'oklch(0.35 0.09 155)' : 'oklch(0.88 0.015 75)',
+                  color: hasItems ? '#fff' : 'oklch(0.55 0.04 75)',
+                  cursor: 'pointer',
+                }}
+              >
+                {hasItems ? '✉️  Save & Email My Quote' : 'Add services above to build your quote'}
+              </button>
+
               {/* Reset Button */}
               {hasItems && (
                 <button
@@ -908,7 +923,12 @@ export default function Home() {
       </footer>
 
       {/* ── Exit-intent Save Quote Modal ── */}
-      <SaveQuoteModal hasItems={hasItems} quote={quoteSummary} />
+      <SaveQuoteModal
+        hasItems={hasItems}
+        quote={quoteSummary}
+        externalOpen={saveModalOpen}
+        onExternalOpenHandled={() => setSaveModalOpen(false)}
+      />
     </div>
   );
 }

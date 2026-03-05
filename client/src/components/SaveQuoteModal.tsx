@@ -39,11 +39,15 @@ interface SaveQuoteModalProps {
   hasItems: boolean;
   /** Current quote data to save */
   quote: QuoteSummary;
+  /** External trigger — set to true to open the modal programmatically (e.g. from a button) */
+  externalOpen?: boolean;
+  /** Callback to reset the external trigger after the modal opens */
+  onExternalOpenHandled?: () => void;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export function SaveQuoteModal({ hasItems, quote }: SaveQuoteModalProps) {
+export function SaveQuoteModal({ hasItems, quote, externalOpen, onExternalOpenHandled }: SaveQuoteModalProps) {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,6 +61,15 @@ export function SaveQuoteModal({ hasItems, quote }: SaveQuoteModalProps) {
   const hasTriggered = useRef(false);
 
   const saveMutation = trpc.quotes.save.useMutation();
+
+  // ── External trigger (e.g. "Save My Quote" button) ─────────────────────────
+  useEffect(() => {
+    if (externalOpen && !saved) {
+      setOpen(true);
+      setDismissed(false);
+      onExternalOpenHandled?.();
+    }
+  }, [externalOpen, saved, onExternalOpenHandled]);
 
   // ── Exit-intent detection ──────────────────────────────────────────────────
 
