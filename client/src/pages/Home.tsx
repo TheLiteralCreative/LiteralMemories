@@ -920,6 +920,14 @@ export default function Home() {
             </p>
           </div>
         </div>
+        <div className="container pb-4 flex justify-end">
+          <a
+            href="/admin"
+            className="text-[10px] text-[oklch(0.75_0.02_75)] hover:text-[oklch(0.55_0.04_75)] transition-colors"
+          >
+            Admin
+          </a>
+        </div>
       </footer>
 
       {/* ── Exit-intent Save Quote Modal ── */}
