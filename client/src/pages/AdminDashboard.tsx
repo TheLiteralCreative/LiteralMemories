@@ -406,19 +406,23 @@ function DashboardContent() {
 
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
-  const [adminToken, setAdminToken] = useState<string | null>(null);
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient, setTrpcClient] = useState<ReturnType<typeof createAdminTrpcClient> | null>(null);
 
+  // Read token synchronously — avoids a useEffect delay that keeps spinner showing
+  const adminToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+
+  // Stable clients — useMemo ensures they are never recreated on re-render
+  const queryClient = useMemo(() => new QueryClient(), []);
+  const trpcClient = useMemo(
+    () => (adminToken ? createAdminTrpcClient(adminToken) : null),
+    [adminToken]
+  );
+
+  // Redirect to login if no token is present
   useEffect(() => {
-    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
-    if (!token) {
+    if (!adminToken) {
       navigate("/admin/login");
-      return;
     }
-    setAdminToken(token);
-    setTrpcClient(createAdminTrpcClient(token));
-  }, [navigate]);
+  }, [adminToken, navigate]);
 
   if (!adminToken || !trpcClient) {
     return (

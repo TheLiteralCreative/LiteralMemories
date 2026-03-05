@@ -36,3 +36,4 @@
 - [x] Confirm final email flow: client gets 1 HTML email from literalmemories.com; Joel gets 1 HTML email at literalmemories.com + 1 BCC at literalcreative.com + 1 plain-text SMS at 615-364-0630
 - [x] Update SMTP connection test to skip in sandbox (port 465 blocked by firewall); 14 pass, 1 skipped
 - [x] Add discreet Admin link in footer for easy navigation to /admin
+- [x] Fix admin dashboard infinite spinner after login (token read synchronously, providers stabilized with useMemo)
