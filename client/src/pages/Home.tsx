@@ -17,6 +17,7 @@ import {
   type PricingTier,
   type ServiceItem,
 } from '@/lib/pricingData';
+import { SaveQuoteModal } from '@/components/SaveQuoteModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -370,6 +371,41 @@ export default function Home() {
   const balance = total - deposit;
 
   const hasItems = subtotal > 0;
+
+  // Build the quote summary object for the SaveQuoteModal
+  const quoteSummary = {
+    pricingTier: tier,
+    lineItems: SERVICE_CATEGORIES.flatMap(cat =>
+      cat.services
+        .map(item => {
+          const entry = getEntry(form, item.id);
+          const cost = computeServiceCost(item, entry, tier);
+          if (cost === 0) return null;
+          const qty = item.inputMode === 'quantity'
+            ? entry.quantity
+            : (entry.adjustedHours > 0 ? entry.adjustedHours : entry.estimatedHours);
+          return {
+            category: cat.name,
+            name: item.name,
+            quantity: qty,
+            unitPrice: getServicePrice(item, tier),
+            total: cost,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+    ),
+    deliveryItems: DELIVERY_OPTIONS
+      .filter(opt => form.delivery[opt.id])
+      .map(opt => ({ name: opt.name, price: getDeliveryPrice(opt, tier) })),
+    subtotal,
+    accountCredit: form.accountCredit,
+    shippingRate: form.shippingRate,
+    serviceAdjustments: form.serviceAdjustments,
+    estimatedTotal: total,
+    deposit,
+    balance,
+    rawState: JSON.stringify(form),
+  };
 
   return (
     <div className="min-h-screen" style={{ background: 'oklch(0.98 0.008 75)' }}>
@@ -853,12 +889,26 @@ export default function Home() {
             <p className="text-sm font-bold text-[oklch(0.22_0.015_65)]">Literal Memories</p>
             <p className="text-xs text-[oklch(0.55_0.04_75)]">Legacy Media Digitization Services</p>
           </div>
-          <p className="text-xs text-[oklch(0.55_0.04_75)] text-center sm:text-right">
-            Prices are estimates and subject to change upon project review.<br />
-            Contact us to discuss your specific project needs.
-          </p>
+          <div className="text-center sm:text-right">
+            <p className="text-xs text-[oklch(0.55_0.04_75)]">
+              Prices are estimates and subject to change upon project review.
+            </p>
+            <p className="text-xs text-[oklch(0.55_0.04_75)] mt-1">
+              Questions?{' '}
+              <a
+                href="mailto:Joel@literalmemories.com"
+                className="font-semibold hover:underline"
+                style={{ color: 'oklch(0.35 0.09 155)' }}
+              >
+                Joel@literalmemories.com
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
+
+      {/* ── Exit-intent Save Quote Modal ── */}
+      <SaveQuoteModal hasItems={hasItems} quote={quoteSummary} />
     </div>
   );
 }
