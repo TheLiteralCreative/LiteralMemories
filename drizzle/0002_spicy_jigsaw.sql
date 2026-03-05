@@ -1,0 +1,1 @@
+ALTER TABLE `saved_quotes` ADD `adminStatus` enum('new','contacted','archived') DEFAULT 'new' NOT NULL;

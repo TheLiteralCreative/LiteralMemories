@@ -46,6 +46,8 @@ export const savedQuotes = mysqlTable("saved_quotes", {
   depositAmountCents: int("depositAmountCents").notNull().default(0),
   /** Email delivery status */
   emailSent: mysqlEnum("emailSent", ["pending", "sent", "failed"]).default("pending").notNull(),
+  /** Admin workflow status */
+  adminStatus: mysqlEnum("adminStatus", ["new", "contacted", "archived"]).default("new").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

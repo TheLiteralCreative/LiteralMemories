@@ -1,9 +1,18 @@
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { ENV } from "./_core/env";
 import { z } from "zod";
-import { insertSavedQuote, updateQuoteEmailStatus } from "./quotesDb";
+import {
+  insertSavedQuote,
+  updateQuoteEmailStatus,
+  listSavedQuotes,
+  countSavedQuotes,
+  getSavedQuoteById,
+  updateQuoteAdminStatus,
+} from "./quotesDb";
 import { sendEstimateEmail, type EstimateLineItem } from "./email";
 import { notifyOwner } from "./_core/notification";
 
@@ -37,9 +46,21 @@ const saveQuoteInputSchema = z.object({
   estimatedTotal: z.number(),
   deposit: z.number(),
   balance: z.number(),
-  /** Full raw calculator state for future reference */
   rawState: z.string(),
 });
+
+// ── Admin auth helper ──────────────────────────────────────────────────────────
+// Simple password-based admin token: the client sends the password as a Bearer
+// token in the x-admin-token header. The server compares it to ADMIN_PASSWORD.
+// This is intentionally simple — no user accounts needed for a single-owner tool.
+
+function requireAdminToken(ctx: { req: { headers: Record<string, string | string[] | undefined> } }) {
+  const header = ctx.req.headers["x-admin-token"];
+  const token = Array.isArray(header) ? header[0] : header;
+  if (!token || token !== ENV.adminPassword) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid admin credentials" });
+  }
+}
 
 // ── Router ─────────────────────────────────────────────────────────────────────
 
@@ -58,13 +79,10 @@ export const appRouter = router({
   quotes: router({
     /**
      * Save a quote from the pricing calculator.
-     * Persists to DB, sends confirmation email to client and owner,
-     * and fires an owner notification.
      */
     save: publicProcedure
       .input(saveQuoteInputSchema)
       .mutation(async ({ input }) => {
-        // 1. Persist to database
         const quoteId = await insertSavedQuote({
           clientName: input.clientName,
           clientEmail: input.clientEmail,
@@ -77,7 +95,6 @@ export const appRouter = router({
           emailSent: "pending",
         });
 
-        // 2. Send emails (best-effort — don't fail the save if email fails)
         let emailStatus: "sent" | "failed" = "failed";
         try {
           await sendEstimateEmail({
@@ -101,17 +118,15 @@ export const appRouter = router({
           console.error("[Email] Failed to send estimate email:", err);
         }
 
-        // 3. Update email status in DB
         await updateQuoteEmailStatus(quoteId, emailStatus);
 
-        // 4. Notify owner via Manus notification system (in-app alert)
         try {
           await notifyOwner({
             title: `New Quote Saved — ${input.clientName}`,
             content: `${input.clientName} (${input.clientEmail}) saved a quote for $${input.estimatedTotal.toFixed(2)}. Email: ${emailStatus}.`,
           });
         } catch {
-          // Non-critical — ignore notification failures
+          // Non-critical
         }
 
         return {
@@ -119,6 +134,73 @@ export const appRouter = router({
           quoteId,
           emailSent: emailStatus === "sent",
         };
+      }),
+  }),
+
+  admin: router({
+    /**
+     * Verify the admin password. Returns { valid: true } on success.
+     */
+    login: publicProcedure
+      .input(z.object({ password: z.string() }))
+      .mutation(({ input }) => {
+        if (!ENV.adminPassword || input.password !== ENV.adminPassword) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Incorrect password" });
+        }
+        return { valid: true };
+      }),
+
+    /**
+     * List all saved quotes with optional search and pagination.
+     * Requires x-admin-token header.
+     */
+    listQuotes: publicProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+      )
+      .query(async ({ input, ctx }) => {
+        requireAdminToken(ctx);
+        const [quotes, total] = await Promise.all([
+          listSavedQuotes({ search: input.search, limit: input.limit, offset: input.offset }),
+          countSavedQuotes(input.search),
+        ]);
+        return { quotes, total };
+      }),
+
+    /**
+     * Get a single quote by ID with full detail.
+     * Requires x-admin-token header.
+     */
+    getQuote: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        requireAdminToken(ctx);
+        const quote = await getSavedQuoteById(input.id);
+        if (!quote) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Quote not found" });
+        }
+        return quote;
+      }),
+
+    /**
+     * Update the admin status of a quote.
+     * Requires x-admin-token header.
+     */
+    updateStatus: publicProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["new", "contacted", "archived"]),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        requireAdminToken(ctx);
+        await updateQuoteAdminStatus(input.id, input.status);
+        return { success: true };
       }),
   }),
 });

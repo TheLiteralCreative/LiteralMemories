@@ -20,3 +20,14 @@
 - [x] Add prominent "Save & Email My Quote" button in sticky summary sidebar
 - [x] Button is always visible — green CTA when items are selected, muted prompt when empty
 - [x] Button wired to SaveQuoteModal via externalOpen prop (works on mobile too)
+- [x] Admin login page at /admin/login with password protection
+- [x] Admin session stored in sessionStorage (simple, no OAuth required)
+- [x] tRPC admin procedures gated by x-admin-token header (ADMIN_PASSWORD secret)
+- [x] Backend: list all quotes (sorted by newest first, with pagination)
+- [x] Backend: get single quote detail
+- [x] Backend: mark quote as contacted / archived
+- [x] Admin dashboard table: client name, email, phone, total, tier, date, status
+- [x] Admin quote detail modal: full line-item breakdown + quick email link
+- [x] Search/filter by client name or email
+- [x] Pagination (20 per page)
+- [x] 8 vitest tests for admin procedures (all passing)
