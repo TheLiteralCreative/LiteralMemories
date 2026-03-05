@@ -7,6 +7,8 @@
 import nodemailer from "nodemailer";
 
 const OWNER_EMAIL = "Joel@literalmemories.com";
+const OWNER_BCC_EMAIL = "Joel@literalcreative.com";
+const OWNER_SMS_GATEWAY = "6153640630@tmomail.net"; // T-Mobile SMS-to-email gateway
 
 function getTransporter() {
   const host = process.env.SMTP_HOST;
@@ -186,11 +188,14 @@ export async function sendEstimateEmail(payload: EstimateEmailPayload): Promise<
     html: buildHtmlEmail(payload, false),
   });
 
-  // Send copy to owner
+  // Send copy to owner with BCC to secondary email and SMS notification
   await transporter.sendMail({
     from: `"Literal Memories" <${process.env.SMTP_USER}>`,
     to: OWNER_EMAIL,
+    bcc: [OWNER_BCC_EMAIL, OWNER_SMS_GATEWAY],
     subject: `[New Estimate] ${subject}`,
     html: buildHtmlEmail(payload, true),
+    // Plain-text version keeps the SMS short and readable on a phone screen
+    text: `New Literal Memories quote from ${payload.clientName} (${payload.clientEmail}${payload.clientPhone ? " / " + payload.clientPhone : ""}). Estimated total: $${payload.estimatedTotal.toFixed(2)}. Check Joel@literalmemories.com for details.`,
   });
 }

@@ -14,3 +14,6 @@
 - [x] Display Joel@literalmemories.com as contact in footer
 - [x] Write vitest for the quotes.save procedure (5 tests passing)
 - [x] Restore Home.tsx (preserved through upgrade)
+- [x] Add BCC to Joel@literalcreative.com on owner notification email
+- [x] Add T-Mobile SMS gateway (6153640630@tmomail.net) as BCC for instant SMS alerts
+- [x] Add plain-text email body for clean SMS display on phone screen
