@@ -188,14 +188,25 @@ export async function sendEstimateEmail(payload: EstimateEmailPayload): Promise<
     html: buildHtmlEmail(payload, false),
   });
 
-  // Send copy to owner with BCC to secondary email and SMS notification
+  // Send copy to owner with BCC to secondary email
   await transporter.sendMail({
     from: `"Literal Memories" <${process.env.SMTP_USER}>`,
     to: OWNER_EMAIL,
-    bcc: [OWNER_BCC_EMAIL, OWNER_SMS_GATEWAY],
+    bcc: [OWNER_BCC_EMAIL],
     subject: `[New Estimate] ${subject}`,
     html: buildHtmlEmail(payload, true),
-    // Plain-text version keeps the SMS short and readable on a phone screen
-    text: `New Literal Memories quote from ${payload.clientName} (${payload.clientEmail}${payload.clientPhone ? " / " + payload.clientPhone : ""}). Estimated total: $${payload.estimatedTotal.toFixed(2)}. Check Joel@literalmemories.com for details.`,
+    text: `New Literal Memories estimate from ${payload.clientName} (${payload.clientEmail}${payload.clientPhone ? " / " + payload.clientPhone : ""}). Total: $${payload.estimatedTotal.toFixed(2)}.`,
+  });
+
+  // Send a separate plain-text-only SMS notification via T-Mobile email-to-SMS gateway.
+  // SMS gateways silently drop HTML emails — this must be text-only with no HTML at all.
+  const smsText = `LiteralMemories: New quote from ${payload.clientName}${payload.clientPhone ? " (" + payload.clientPhone + ")" : ""} — $${payload.estimatedTotal.toFixed(2)}. Check Joel@literalmemories.com`;
+  await transporter.sendMail({
+    from: `"Literal Memories" <${process.env.SMTP_USER}>`,
+    to: OWNER_SMS_GATEWAY,
+    subject: "", // SMS gateways ignore the subject line
+    text: smsText,
+    // Explicitly set no HTML so the gateway cannot fall back to rendering it
+    html: undefined,
   });
 }

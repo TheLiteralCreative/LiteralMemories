@@ -14,7 +14,6 @@ import {
   updateQuoteAdminStatus,
 } from "./quotesDb";
 import { sendEstimateEmail, type EstimateLineItem } from "./email";
-import { notifyOwner } from "./_core/notification";
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
@@ -119,15 +118,6 @@ export const appRouter = router({
         }
 
         await updateQuoteEmailStatus(quoteId, emailStatus);
-
-        try {
-          await notifyOwner({
-            title: `New Quote Saved — ${input.clientName}`,
-            content: `${input.clientName} (${input.clientEmail}) saved a quote for $${input.estimatedTotal.toFixed(2)}. Email: ${emailStatus}.`,
-          });
-        } catch {
-          // Non-critical
-        }
 
         return {
           success: true,

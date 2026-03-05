@@ -31,3 +31,7 @@
 - [x] Search/filter by client name or email
 - [x] Pagination (20 per page)
 - [x] 8 vitest tests for admin procedures (all passing)
+- [x] Remove notifyOwner call from quotes.save — Manus-branded email eliminated
+- [x] Fix SMS: send a separate plain-text-only email to T-Mobile gateway (HTML was being silently dropped)
+- [x] Confirm final email flow: client gets 1 HTML email from literalmemories.com; Joel gets 1 HTML email at literalmemories.com + 1 BCC at literalcreative.com + 1 plain-text SMS at 615-364-0630
+- [x] Update SMTP connection test to skip in sandbox (port 465 blocked by firewall); 14 pass, 1 skipped
