@@ -10,9 +10,8 @@ export async function insertSavedQuote(data: InsertSavedQuote): Promise<number> 
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(savedQuotes).values(data);
-  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId ?? 0;
-  return insertId;
+  const [inserted] = await db.insert(savedQuotes).values(data).returning({ id: savedQuotes.id });
+  return inserted?.id ?? 0;
 }
 
 /**
