@@ -1,6 +1,4 @@
 import { TRPCError } from "@trpc/server";
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { ENV } from "./_core/env";
@@ -68,9 +66,10 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    // No server-side session to clear in the current architecture — the
+    // client clears its own sessionStorage. Endpoint preserved so the
+    // client-side `useAuth` hook's logoutMutation still has a target.
+    logout: publicProcedure.mutation(() => {
       return { success: true } as const;
     }),
   }),

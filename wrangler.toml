@@ -1,0 +1,17 @@
+# Cloudflare Pages + Functions configuration for LiteralMemories.
+#
+# Most build settings live in the Cloudflare Pages dashboard (project name,
+# build command, output directory, branch deploy hooks). This file pins
+# runtime compatibility so deploys don't drift if Cloudflare updates defaults.
+#
+# Env vars are set in the Cloudflare Pages dashboard, never in this file.
+
+name = "literalmemories"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare Pages-specific:
+# - Build command: `pnpm install --frozen-lockfile && pnpm build`
+# - Build output directory: `dist/public`
+# - Functions directory: `functions/` (default, picked up automatically)
+# - Root directory: project root (where this file lives)
