@@ -7,6 +7,41 @@
 
 ---
 
+## UPDATE — 2026-09-10: the branded domain is confirmed dead, and the Node_01 rule below is superseded
+
+**Verified today:** `https://literalmemories.onrender.com` is **alive and fully working** — calculator,
+service catalogue, live estimate summary. `https://literalmemories.com` returns **404**: its DNS is at
+GoDaddy (`ns29/ns30.domaincontrol.com`) and still points at the Manus IP pair, which now serves nothing.
+So LM has been publicly unreachable under its own name since the Manus origin rotted — the app was
+never the problem.
+
+Also observed: the Render free tier's 15-minute idle spin-down produced a **~20-second cold start**
+before the page appeared. For a public quote calculator that is a conversion problem in its own right,
+independent of DNS.
+
+**Decision taken 2026-09-10: LM moves to NODE-01**, served at `literalmemories.literalcreative.com`
+with `literalmemories.com` as an alias. This resolves the cutover that has been blocked since
+2026-05-28 on Render's 2-slot custom-domain cap — without the $20/mo tier, and without the cold start.
+
+**This supersedes the rule in §Stack below** that *"LM specifically does not fit Node_01 because the
+audience is public."* That was written 2026-05-28. On **2026-08-14** the LC client portal was deployed
+to NODE-01 behind a Cloudflare Tunnel **precisely because** its users are clients who cannot be added
+to the tailnet. A public audience stopped being a disqualifier the moment that pattern was proven.
+
+**Prerequisites, in order:**
+1. **Rotate the Neon credential** (open item #2 below — still not done as of 2026-09-10).
+2. Move `literalmemories.com` DNS to Cloudflare — the tunnel can only route zones Cloudflare controls.
+3. Deploy to `~/srv/apps/literalmemories`. **Claim a port outside 3001–3010**: the portal's
+   `findAvailablePort()` walks upward from 3000, and the tunnel ingress points at a fixed 3000.
+   Suggested: **3100**.
+
+Wider context: `literalcreative-strategy/LC_NEST_PLATFORM_ARCHITECTURE_2026-09-10.md` — LM is the
+inaugural spoke of the hub-and-spoke model.
+
+---
+
+---
+
 ## Architecture Contract (locked decisions)
 
 ### Stack (post-Manus, as of 2026-05-28)
@@ -28,7 +63,7 @@
 
 ### Node_01 reference
 
-For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `MANUS_Document_Repository/_docs/specs/node_01_overview.md`. LM specifically does *not* fit Node_01 because the audience is public (clients submitting quote requests).
+For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `MANUS_Document_Repository/_docs/specs/node_01_overview.md`. ~~LM specifically does *not* fit Node_01 because the audience is public (clients submitting quote requests).~~ **Superseded 2026-09-10 — see the banner at the top of this file.**
 
 ---
 
