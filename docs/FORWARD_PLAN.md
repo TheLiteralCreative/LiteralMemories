@@ -29,7 +29,7 @@ to NODE-01 behind a Cloudflare Tunnel **precisely because** its users are client
 to the tailnet. A public audience stopped being a disqualifier the moment that pattern was proven.
 
 **Prerequisites, in order:**
-1. **Rotate the Neon credential** (open item #2 below — still not done as of 2026-09-10).
+1. ~~**Rotate the Neon credential**~~ — **DONE 2026-09-14.** See open item #2 below.
 2. Move `literalmemories.com` DNS to Cloudflare — the tunnel can only route zones Cloudflare controls.
 3. Deploy to `~/srv/apps/literalmemories`. **Claim a port outside 3001–3010**: the portal's
    `findAvailablePort()` walks upward from 3000, and the tunnel ingress points at a fixed 3000.
@@ -72,7 +72,19 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
 ### Phase A — Stabilize and cut over
 
 1. **[YOU]** Smoke-test live Render URL. Calculator UI loads, submit a test quote, admin login at `/admin`.
-2. **[YOU]** Rotate Neon Postgres password. Connection string was exposed in chat transcript on 2026-05-28; rotate before merging to `main`. Update `.env` locally and Render env var.
+2. ~~**[YOU]** Rotate Neon Postgres password.~~ **COMPLETED 2026-09-14** — 109 days after it was flagged.
+   - `neondb_owner` password reset in the Neon console. Endpoint unchanged (`ep-soft-haze-ap0o2zyp…`) — a role
+     password reset does not move the compute endpoint.
+   - **Consumers updated and verified by a database *write*, not by a green deploy:** Render `DATABASE_URL`
+     (saved with "Save and deploy"; note "Save only" would have left the running service on the old value), and
+     the local `.env`. A test quote was submitted and confirmed in `/admin` on **both** local and Render.
+   - **Exposure scope, verified 2026-09-14:** the leak was a **chat transcript only**. `.env` is untracked and
+     covered by `.gitignore`; the only other connection-string match in the repo is the literal placeholder
+     `postgresql://...` in `.claude/commands/env-setup.md`. **Nothing to purge from git history.**
+   - **Third consumer checked and clear:** the abandoned Cloudflare Pages project `literalmemories` has an
+     **empty** Variables-and-secrets table — the credential was never stored there.
+   - `ADMIN_PASSWORD` shares this file and was **not** part of the flagged exposure, so it was left alone.
+     Note the app fails closed if it is ever lost: `server/routers.ts:136` and `:57` both reject when it is empty.
 3. **[TOGETHER]** Decide DNS cutover path for `literalmemories.com`:
    - (a) Current DNS provider + Render paid tier ($20/mo team plan; LM is the 3rd custom URL — see task #15 of session task list)
    - (b) Move `literalmemories.com` to Cloudflare DNS first, then CNAME-proxy to the Render URL (stays on free tier)
@@ -102,12 +114,12 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
 | Phase | Status |
 |---|---|
 | Manus migration (platform layer) | ✓ 2026-05-28 |
-| Smoke test live Render URL | ⏳ pending user |
-| Rotate Neon credentials | ⏳ pending user (security gate) |
+| Smoke test live Render URL | **✓ 2026-09-14** — quote submitted and confirmed in `/admin` |
+| Rotate Neon credentials | **✓ 2026-09-14** — rotated, both consumers verified by a write |
 | DNS cutover decision | ⏳ pending decision |
 | DNS cutover execution | ⏳ blocked on decision above |
 | Resend email swap | ⏳ scoped, ready when prioritized |
-| Branch merge to `main` | ⏳ blocked on credential rotation |
+| Branch merge to `main` | **UNBLOCKED 2026-09-14** — the credential gate is cleared. See the Cloudflare Pages note below before merging |
 | Manus decommission | ⏳ blocked on ~1 week stability window |
 | Cloudflare Access for admin | ⏳ blocked on Cloudflare DNS step |
 
@@ -118,3 +130,19 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
 - `MANUS_Document_Repository/_docs/specs/node_01_overview.md` — 3-lane hosting framework
 - `MANUS_Document_Repository/VSCode_Projects/literalcreative-strategy/LC_KIT_NODE_EVALUATION_2026-05-14.md` — original studio-wide hosting plan (now partially superseded for LM)
 - `docs/session-log/2026-05-28.md` — full record of the Manus → Render migration session
+
+---
+
+## Note added 2026-09-14 — the abandoned Cloudflare Pages project is still wired to this repo
+
+Found while verifying the credential rotation had no third consumer. The Pages project
+`literalmemories` — from the attempts abandoned on 2026-05-28 when `nodemailer` would not bundle for
+Workers — is **still connected to `TheLiteralCreative/LiteralMemories` with automatic deployments
+ENABLED, production branch `migration/cloudflare`.**
+
+- **Not a security issue.** Its Variables-and-secrets table is empty; it never held `DATABASE_URL`.
+- **It is a live trigger.** Every push to `migration/cloudflare` starts a Cloudflare build that
+  cannot succeed, and `migration/cloudflare` is both Render's production branch and the branch
+  queued to merge into `main`.
+- **Minimal fix:** Settings → Branch control → disable automatic deployments. Reversible.
+- **Deleting the project** is a separate call, deliberately not taken while closing a security item.
