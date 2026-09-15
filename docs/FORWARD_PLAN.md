@@ -1,9 +1,9 @@
 # LiteralMemories.com — Forward Plan
 
 **Last updated:** 2026-09-15 (status fields; dated sections below keep their original dates)
-**Current version:** 1.1.0 (off-Manus, live on Render + Neon)
-**Live URL:** https://literalmemories.com — live over HTTPS since 2026-09-15 (DNS on Cloudflare, served by Render). `https://literalmemories.onrender.com` still answers directly.
-**Branch:** `main` — Render production branch since 2026-09-14 (`migration/cloudflare` was fast-forwarded into it)
+**Current version:** 1.1.0 + PurelyMail email (`308935c`) — live on **NODE-01** + Neon since 2026-09-15
+**Live URL:** https://literalmemories.com (also `literalmemories.literalcreative.com`) — served from **NODE-01** through the Cloudflare tunnel since 2026-09-15. Render is **suspended**; `literalmemories.onrender.com` no longer serves. Runbook + rollback: `docs/NODE-01_RESIDENCY_RUNBOOK.md`.
+**Branch:** `main` — deployed to NODE-01 by `git pull` (was Render's production branch 2026-09-14 → 09-15)
 
 ---
 
@@ -29,6 +29,10 @@ with `literalmemories.com` as an alias. This resolves the cutover that has been 
 > Which address is canonical is **unruled** in the Hub-Spoke Addressing gate
 > (`LC_MANDEL-BOT/_briefs/gates/hub-spoke-addressing/00_HSA-OPEN.md`). Whether LM still moves to
 > NODE-01 is an **open decision for Joel**, not a settled one. The cold-start problem above remains.
+>
+> **Resolved later the same day:** Joel decided **yes**. LM moved to NODE-01 on 2026-09-15 so order
+> email could go through PurelyMail (Render free blocks SMTP). The canonical-address question in the
+> HSA gate is still open; LM answers on both hostnames.
 
 **This supersedes the rule in §Stack below** that *"LM specifically does not fit Node_01 because the
 audience is public."* That was written 2026-05-28. On **2026-08-14** the LC client portal was deployed
@@ -59,10 +63,10 @@ inaugural spoke of the hub-and-spoke model.
 | Backend | Express 4 + tRPC 11 | Unchanged. The `functions/api/trpc/[trpc].ts` Cloudflare Pages Function and `wrangler.toml` in the repo are dead code (Cloudflare path was attempted and abandoned — see session log 2026-05-28). |
 | Database | Neon Postgres 17 (serverless, free tier) | `us-east-1`, scales to zero, ~1 sec cold start |
 | ORM | Drizzle (pg-core) | Was MySQL/Drizzle on Manus; converted 2026-05-28 |
-| Hosting | Render Web Service (Node, free tier) | 15-min idle spin-down. Branch: `main` (switched 2026-09-14). |
+| Hosting | **NODE-01** — LaunchAgent `com.literalcreative.literalmemories`, port 3001 on 127.0.0.1, via Cloudflare tunnel | Since 2026-09-15. No cold start. Previously Render free tier (suspended). |
 | Auth (admin) | ADMIN_PASSWORD via `x-admin-token` header | `requireAdminToken()` in `server/routers.ts`. No OAuth in the path. |
-| Email | **Stubbed** — `email.ts` throws | Pending Resend swap. Existing try/catch in `quotes.save` handles the failure gracefully (`emailSent: 'failed'`). |
-| Brand domain | `literalmemories.com` — DNS on Cloudflare, pointed at Render | **Live 2026-09-15.** Proxy (orange cloud) must stay off — see `docs/DNS_CUTOVER_literalmemories.md` |
+| Email | **LIVE 2026-09-15** — nodemailer + PurelyMail SMTP 465 as `joel@literalmemories.com` | Owner `[New Estimate]` (BCC `joel@literalcreative.com`) + customer copy. Resend was never adopted (Joel: PurelyMail only). Stubbed 2026-05-28 → 09-15 |
+| Brand domain | `literalmemories.com` — apex + `www` are **proxied** CNAMEs to the NODE-01 tunnel (since 2026-09-15) | Mail records stay **DNS only**. The earlier "proxy must stay off" applied only while Render issued certificates |
 
 ### Deviations from the May 14 LC Kit plan
 
@@ -133,8 +137,9 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
 | Smoke test live Render URL | **✓ 2026-09-14** — quote submitted and confirmed in `/admin` |
 | Rotate Neon credentials | **✓ 2026-09-14** — rotated, both consumers verified by a write |
 | DNS cutover decision | **✓ 2026-09-14** — option (b): zone to Cloudflare, records pointed at Render **DNS-only (not proxied)** — apex `A`, per the cutover record. Stays on free tier; prejudges nothing in the HSA gate |
-| DNS cutover execution | **✓ 2026-09-14** — delegation moved to Cloudflare, mail verified intact. **TLS issued, site live 2026-09-15.** Real send/receive mail test still open. See `docs/DNS_CUTOVER_literalmemories.md` |
-| Resend email swap | ⏳ scoped, ready when prioritized |
+| DNS cutover execution | **✓ 2026-09-14** — delegation moved to Cloudflare, mail verified intact. **TLS issued, site live 2026-09-15.** Real mail test **passed 2026-09-15** (send + receive; SPF/DKIM/DMARC pass). See `docs/DNS_CUTOVER_literalmemories.md` |
+| ~~Resend email swap~~ Email restored | **✓ 2026-09-15** — PurelyMail SMTP from NODE-01 (not Resend) |
+| Move to NODE-01 | **✓ 2026-09-15** — see `docs/NODE-01_RESIDENCY_RUNBOOK.md`. Render suspended; delete after a clean week |
 | Branch merge to `main` | **✓ 2026-09-14** — fast-forwarded (`839353b`), pushed, and Render's production branch flipped to `main`. Deploy verified green |
 | Manus decommission | ⏳ blocked on ~1 week stability window |
 | Cloudflare Access for admin | **UNBLOCKED 2026-09-14** — the zone is now on Cloudflare |
