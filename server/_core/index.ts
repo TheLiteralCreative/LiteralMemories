@@ -48,15 +48,37 @@ async function startServer() {
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  // Bind address. On NODE-01 set HOST=127.0.0.1: the Cloudflare tunnel reaches
+  // the app over loopback, so nothing else on the network needs to.
+  const host = process.env.HOST;
 
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  // Production never walks to another port. On NODE-01 a silent walk would put
+  // the app on a port the tunnel does not point at (or onto LC Portal's :3000),
+  // and the site would 502 while the process looked healthy. Fail loudly instead.
+  let port = preferredPort;
+  if (process.env.NODE_ENV === "production") {
+    if (!(await isPortAvailable(preferredPort))) {
+      throw new Error(`Port ${preferredPort} is already in use; refusing to start on another port in production.`);
+    }
+  } else {
+    port = await findAvailablePort(preferredPort);
+    if (port !== preferredPort) {
+      console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    }
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
+  const onListening = () => {
+    console.log(`Server running on http://${host ?? "localhost"}:${port}/`);
+  };
+  if (host) {
+    server.listen(port, host, onListening);
+  } else {
+    server.listen(port, onListening);
+  }
 }
 
-startServer().catch(console.error);
+startServer().catch(err => {
+  console.error(err);
+  // Exit non-zero so launchd (KeepAlive) and the logs show the failure.
+  process.exit(1);
+});
