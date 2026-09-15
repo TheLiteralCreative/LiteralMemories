@@ -51,6 +51,7 @@ export function SaveQuoteModal({ hasItems, quote, externalOpen, onExternalOpenHa
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -128,7 +129,7 @@ export function SaveQuoteModal({ hasItems, quote, externalOpen, onExternalOpenHa
     if (!validate()) return;
 
     try {
-      await saveMutation.mutateAsync({
+      const result = await saveMutation.mutateAsync({
         clientName: name.trim(),
         clientEmail: email.trim(),
         clientPhone: phone.trim() || undefined,
@@ -145,6 +146,7 @@ export function SaveQuoteModal({ hasItems, quote, externalOpen, onExternalOpenHa
         balance: quote.balance,
         rawState: quote.rawState,
       });
+      setEmailSent(result.emailSent);
       setSaved(true);
     } catch (err) {
       toast.error("Something went wrong saving your quote. Please try again.");
@@ -178,13 +180,17 @@ export function SaveQuoteModal({ hasItems, quote, externalOpen, onExternalOpenHa
               </svg>
             </div>
             <h2 className="text-2xl font-bold mb-2" style={{ color: "oklch(0.22 0.015 65)", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
-              Quote Saved!
+              Request Received!
             </h2>
             <p className="text-sm mb-1" style={{ color: "oklch(0.55 0.04 75)" }}>
-              A copy of your estimate has been sent to <strong>{email}</strong>.
+              {emailSent ? (
+                <>A copy of your estimate has been sent to <strong>{email}</strong>.</>
+              ) : (
+                <>We have your estimate and your contact details.</>
+              )}
             </p>
             <p className="text-sm mb-6" style={{ color: "oklch(0.55 0.04 75)" }}>
-              Our team will be in touch soon. In the meantime, feel free to continue editing your estimate.
+              Our team will be in touch shortly. In the meantime, feel free to continue editing your estimate.
             </p>
             <Button
               onClick={() => setOpen(false)}
