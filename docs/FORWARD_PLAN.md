@@ -1,9 +1,9 @@
 # LiteralMemories.com — Forward Plan
 
-**Last updated:** 2026-05-28
+**Last updated:** 2026-09-15 (status fields; dated sections below keep their original dates)
 **Current version:** 1.1.0 (off-Manus, live on Render + Neon)
-**Live URL:** https://literalmemories.onrender.com (Render `*.onrender.com` subdomain — branded `literalmemories.com` still on Manus until DNS cutover)
-**Branch:** `migration/cloudflare` (misleading name — actually on Render; rename at merge)
+**Live URL:** https://literalmemories.com — live over HTTPS since 2026-09-15 (DNS on Cloudflare, served by Render). `https://literalmemories.onrender.com` still answers directly.
+**Branch:** `main` — Render production branch since 2026-09-14 (`migration/cloudflare` was fast-forwarded into it)
 
 ---
 
@@ -22,6 +22,13 @@ independent of DNS.
 **Decision taken 2026-09-10: LM moves to NODE-01**, served at `literalmemories.literalcreative.com`
 with `literalmemories.com` as an alias. This resolves the cutover that has been blocked since
 2026-05-28 on Render's 2-slot custom-domain cap — without the $20/mo tier, and without the cold start.
+
+> **Status note 2026-09-15 — read before acting on the decision above.** The move to NODE-01 has
+> **not** happened. On 2026-09-14 `literalmemories.com` was pointed at **Render** as a no-regrets step,
+> and the "blocked on the 2-slot cap" premise turned out to be a misread price (see item 3 below).
+> Which address is canonical is **unruled** in the Hub-Spoke Addressing gate
+> (`LC_MANDEL-BOT/_briefs/gates/hub-spoke-addressing/00_HSA-OPEN.md`). Whether LM still moves to
+> NODE-01 is an **open decision for Joel**, not a settled one. The cold-start problem above remains.
 
 **This supersedes the rule in §Stack below** that *"LM specifically does not fit Node_01 because the
 audience is public."* That was written 2026-05-28. On **2026-08-14** the LC client portal was deployed
@@ -52,10 +59,10 @@ inaugural spoke of the hub-and-spoke model.
 | Backend | Express 4 + tRPC 11 | Unchanged. The `functions/api/trpc/[trpc].ts` Cloudflare Pages Function and `wrangler.toml` in the repo are dead code (Cloudflare path was attempted and abandoned — see session log 2026-05-28). |
 | Database | Neon Postgres 17 (serverless, free tier) | `us-east-1`, scales to zero, ~1 sec cold start |
 | ORM | Drizzle (pg-core) | Was MySQL/Drizzle on Manus; converted 2026-05-28 |
-| Hosting | Render Web Service (Node, free tier) | 15-min idle spin-down. Branch: `migration/cloudflare` for now, switch to `main` at merge. |
+| Hosting | Render Web Service (Node, free tier) | 15-min idle spin-down. Branch: `main` (switched 2026-09-14). |
 | Auth (admin) | ADMIN_PASSWORD via `x-admin-token` header | `requireAdminToken()` in `server/routers.ts`. No OAuth in the path. |
 | Email | **Stubbed** — `email.ts` throws | Pending Resend swap. Existing try/catch in `quotes.save` handles the failure gracefully (`emailSent: 'failed'`). |
-| Brand domain | `literalmemories.com` — still on Manus DNS | Pending DNS cutover (open item) |
+| Brand domain | `literalmemories.com` — DNS on Cloudflare, pointed at Render | **Live 2026-09-15.** Proxy (orange cloud) must stay off — see `docs/DNS_CUTOVER_literalmemories.md` |
 
 ### Deviations from the May 14 LC Kit plan
 
@@ -85,15 +92,24 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
      **empty** Variables-and-secrets table — the credential was never stored there.
    - `ADMIN_PASSWORD` shares this file and was **not** part of the flagged exposure, so it was left alone.
      Note the app fails closed if it is ever lost: `server/routers.ts:136` and `:57` both reject when it is empty.
-3. **[TOGETHER]** Decide DNS cutover path for `literalmemories.com`:
+3. ~~**[TOGETHER]** Decide DNS cutover path~~ — **DECIDED AND EXECUTED 2026-09-14: option (b).**
+   The premise of option (a) was wrong: Render's current docs say the Hobby plan **includes 2 custom
+   domains** and extra ones are **$0.25/month**, not a $20/mo team plan. In the event, `literalmemories.com`
+   and `www` fit inside the included 2 at no cost. **Nothing was ever blocking this but a misread price.**
+   Full record: `docs/DNS_CUTOVER_literalmemories.md`. Original options as written:
    - (a) Current DNS provider + Render paid tier ($20/mo team plan; LM is the 3rd custom URL — see task #15 of session task list)
    - (b) Move `literalmemories.com` to Cloudflare DNS first, then CNAME-proxy to the Render URL (stays on free tier)
-4. **[YOU]** Once decision is made: execute DNS cutover. Verify TLS, verify calculator works on branded domain.
+4. ~~**[YOU]** Execute DNS cutover.~~ **DONE 2026-09-14** — delegation on Cloudflare, all seven mail
+   records verified byte-identical post-flip, Render verified both hostnames. **REMAINING: TLS
+   certificates not yet issued** (apex *Pending*, `www` *Certificate Error*). Retry from Render's `…`
+   menu if not self-healed. **Do not enable the Cloudflare proxy** — it breaks issuance.
+   *Update 2026-09-15:* certificates issued; `https://literalmemories.com` is live, verified in a real
+   browser. Which change fixed issuance was never isolated (cutover record, F14).
 
 ### Phase B — Restore email + clean up
 
 5. **[CLAUDE]** Replace `email.ts` stub with Resend HTTP API. ~30 min. Adds `RESEND_API_KEY` env var; type exports unchanged.
-6. **[CLAUDE]** Merge `migration/cloudflare` → `main`. Rename branch to something accurate or delete. Switch Render production branch from `migration/cloudflare` to `main`.
+6. ~~**[CLAUDE]** Merge `migration/cloudflare` → `main`.~~ **DONE 2026-09-14** (`839353b`); ~~switch Render production branch to `main`~~ **DONE 2026-09-14**. **Still open:** rename or delete the `migration/cloudflare` branch — Joel's call.
 7. **[CLAUDE]** Delete dead Cloudflare scaffolding from the repo: `functions/`, `wrangler.toml`. (Or document why kept.)
 8. **[CLAUDE]** Optional cleanup commit: delete `server/_core/cookies.ts` (now unused after Phase 3), delete or repair `server/auth.logout.test.ts` (asserts cookie-clearing behavior that no longer exists).
 
@@ -116,12 +132,12 @@ For decision criteria on when to host on Cloudflare vs Render vs Node_01, see `M
 | Manus migration (platform layer) | ✓ 2026-05-28 |
 | Smoke test live Render URL | **✓ 2026-09-14** — quote submitted and confirmed in `/admin` |
 | Rotate Neon credentials | **✓ 2026-09-14** — rotated, both consumers verified by a write |
-| DNS cutover decision | ⏳ pending decision |
-| DNS cutover execution | ⏳ blocked on decision above |
+| DNS cutover decision | **✓ 2026-09-14** — option (b): zone to Cloudflare, records pointed at Render **DNS-only (not proxied)** — apex `A`, per the cutover record. Stays on free tier; prejudges nothing in the HSA gate |
+| DNS cutover execution | **✓ 2026-09-14** — delegation moved to Cloudflare, mail verified intact. **TLS issued, site live 2026-09-15.** Real send/receive mail test still open. See `docs/DNS_CUTOVER_literalmemories.md` |
 | Resend email swap | ⏳ scoped, ready when prioritized |
-| Branch merge to `main` | **UNBLOCKED 2026-09-14** — the credential gate is cleared. See the Cloudflare Pages note below before merging |
+| Branch merge to `main` | **✓ 2026-09-14** — fast-forwarded (`839353b`), pushed, and Render's production branch flipped to `main`. Deploy verified green |
 | Manus decommission | ⏳ blocked on ~1 week stability window |
-| Cloudflare Access for admin | ⏳ blocked on Cloudflare DNS step |
+| Cloudflare Access for admin | **UNBLOCKED 2026-09-14** — the zone is now on Cloudflare |
 
 ---
 
@@ -146,3 +162,6 @@ ENABLED, production branch `migration/cloudflare`.**
   queued to merge into `main`.
 - **Minimal fix:** Settings → Branch control → disable automatic deployments. Reversible.
 - **Deleting the project** is a separate call, deliberately not taken while closing a security item.
+
+*Update 2026-09-14:* Joel disabled automatic deployments on the Pages project (NODE-01 log F12). It is
+no longer a live trigger. Deleting it remains a separate, open decision.

@@ -1,0 +1,44 @@
+; Domain: literalmemories.com
+; Exported (y-m-d hh:mm:ss): 2026-09-14 14:28:13
+;
+; ARCHIVAL COPY — the authoritative pre-cutover state of the zone as GoDaddy held it,
+; downloaded from GoDaddy's own export immediately before nameserver delegation moved
+; to Cloudflare (clayton.ns.cloudflare.com / elisa.ns.cloudflare.com) on 2026-09-14.
+;
+; Why this file exists: once delegation moves, GoDaddy stops being authoritative and this
+; panel is no longer readable as a source of truth. Anything not carried across is simply
+; gone. This is the record that makes the zone rebuildable from a document.
+; See docs/DNS_CUTOVER_literalmemories.md for what was carried, dropped and added.
+
+$ORIGIN literalmemories.com.
+
+; SOA Record
+@	3600	 IN 	SOA	ns29.domaincontrol.com.	dns.jomax.net. (
+					2026030509
+					28800
+					7200
+					604800
+					3600
+					) 
+
+; A Record
+@	1800	 IN 	A	104.18.26.246
+@	1800	 IN 	A	104.18.27.246
+
+; TXT Record
+@	1800	 IN 	TXT	"purelymail_ownership_proof=1b4eb21c65cd121788c1d5d6a89e8cc1ed087ba17269125664c7b8787fceba1793e503c63704827599bcd9dc833efe0d7cc3a18ae667af82444cd03bba287ed6"
+@	3600	 IN 	TXT	"v=spf1 include:_spf.purelymail.com ~all"
+
+; CNAME Record
+purelymail1._domainkey	3600	 IN 	CNAME	key1.dkimroot.purelymail.com.
+purelymail2._domainkey	3600	 IN 	CNAME	key2.dkimroot.purelymail.com.
+purelymail3._domainkey	3600	 IN 	CNAME	key3.dkimroot.purelymail.com.
+www	3600	 IN 	CNAME	cname.manus.space.
+_dmarc	3600	 IN 	CNAME	dmarcroot.purelymail.com.
+
+; NS Record
+@	3600	 IN 	NS	ns29.domaincontrol.com.
+@	3600	 IN 	NS	ns30.domaincontrol.com.
+
+; MX Record
+@	3600	 IN 	MX	1	mailserver.purelymail.com.
